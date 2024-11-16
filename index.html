@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>FNAF Deathless Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #000000; /* Change background to black */
+            color: white;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            position: relative; /* To position GIFs in absolute corners */
+        }
+
+        .title {
+            font-size: 48px;
+            font-weight: bold;
+            color: white;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .tracker-container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1; /* Keep the tracker above GIFs */
+        }
+
+        /* Game Section (Horizontal Layout) */
+        .game-list {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            gap: 3px;
+            flex-wrap: nowrap;
+            cursor: grab;
+        }
+
+        .game-item {
+            font-size: 26px;
+            color: #aaa;
+            padding: 10px 20px;
+            margin: 0 3px;
+            cursor: pointer;
+            background-color: transparent;
+            transition: all 0.3s ease;
+            border-radius: 5px;
+            white-space: nowrap;
+        }
+
+        .game-item.active {
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .game-item.completed {
+            color: #00ff00;
+        }
+
+        .game-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Nights Section as Checkpoints */
+        .nights-section {
+            background-color: #333;
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            margin-top: 20px;
+            width: auto;
+        }
+
+        .night {
+            font-size: 22px;
+            height: 40px;
+            width: 200px;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            color: #aaa;
+            cursor: pointer;
+            position: relative;
+            padding-left: 10px;
+        }
+
+        .night.completed {
+            color: #00ff00;
+            font-weight: bold;
+        }
+
+        .night:not(.completed):hover {
+            background-color: #555;
+        }
+
+        .night-line {
+            width: 100%;
+            height: 3px;
+            background-color: #444;
+            margin-top: -1px;
+            margin-bottom: 5px;
+        }
+
+        /* GIF Layout at the 4 corners of the screen */
+        .gif-corner {
+            position: absolute;
+            width: 180px; /* Make GIFs a little bigger */
+            height: auto;
+            border-radius: 8px;
+        }
+
+        .top-left {
+            top: 20px;
+            left: 20px;
+        }
+
+        .top-right {
+            top: 20px;
+            right: 20px;
+        }
+
+        .bottom-left {
+            bottom: 20px;
+            left: 20px;
+        }
+
+        .bottom-right {
+            bottom: 20px;
+            right: 20px;
+        }
+
+        /* Responsive behavior */
+        @media (max-width: 768px) {
+            .gif-corner {
+                width: 120px; /* Smaller size for small screens */
+            }
+        }
+
+        /* New CSS for the prompt */
+        .prompt {
+            font-size: 20px;
+            color: #ffcc00;
+            text-align: center;
+            margin-top: 30px;
+            opacity: 1;
+            animation: pulse 2s infinite;  /* Add pulsing animation */
+        }
+
+        /* Pulse animation */
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .prompt.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="title">FNAF Deathless</div>
+
+<div class="tracker-container">
+    <!-- Game Info Section (Tracker) -->
+    <div>
+        <div id="game-list" class="game-list"></div>
+
+        <div class="nights-section" id="night-container"></div>
+    </div>
+</div>
+
+<!-- GIFs placed in the 4 corners -->
+<img src="gifs/1.gif" alt="FNAF GIF 1" class="gif-corner top-left">
+<img src="gifs/2.gif" alt="FNAF GIF 2" class="gif-corner top-right">
+<img src="gifs/3.gif" alt="FNAF GIF 3" class="gif-corner bottom-left">
+<img src="gifs/4.gif" alt="FNAF GIF 4" class="gif-corner bottom-right">
+
+<!-- New prompt -->
+<div id="prompt" class="prompt">Click SPACE to highlight a night as complete</div>
+
+<script>
+    const games = [
+        { name: "FNAF 1", nights: Array(6).fill(false) },
+        { name: "FNAF 2", nights: Array(6).fill(false) },
+        { name: "FNAF 3", nights: Array(6).fill(false) },
+        { name: "FNAF 4", nights: Array(6).fill(false) },
+        { name: "FNAF SL", nights: Array(5).fill(false) },
+        { name: "FNAF PS", nights: Array(6).fill(false) }
+    ];
+
+    let currentGameIndex = 0;
+    let draggedGameIndex = null;
+
+    function switchGame(index) {
+        if (index !== currentGameIndex) {
+            const prevGame = document.querySelector(".game-item.active");
+            prevGame.classList.remove("active");
+
+            const newGame = document.getElementById(`game-${index}`);
+            newGame.classList.add("active");
+
+            currentGameIndex = index;
+            renderGames();
+        }
+    }
+
+    function toggleNightCompletion(nightIndex) {
+        const game = games[currentGameIndex];
+        game.nights[nightIndex] = !game.nights[nightIndex];
+        renderGames();
+    }
+
+    function highlightNextUncompletedNight() {
+        const game = games[currentGameIndex];
+        const nightIndex = game.nights.findIndex(night => !night);
+        if (nightIndex !== -1) {
+            game.nights[nightIndex] = true;
+            renderGames();
+        }
+    }
+
+    function renderGames() {
+        const gameList = document.getElementById("game-list");
+        const nightContainer = document.getElementById("night-container");
+
+        gameList.innerHTML = "";
+        nightContainer.innerHTML = "";
+
+        games.forEach((game, gameIndex) => {
+            const gameElement = document.createElement("div");
+            gameElement.className = "game-item" + (gameIndex === currentGameIndex ? " active" : "") + (game.nights.every(n => n) ? " completed" : "");
+            gameElement.onclick = () => switchGame(gameIndex);
+            gameElement.setAttribute("draggable", true);
+            gameElement.setAttribute("id", `game-${gameIndex}`);
+            gameElement.ondragstart = (e) => drag(e, gameIndex);
+            gameElement.ondragover = (e) => dragOver(e);
+            gameElement.ondrop = (e) => drop(e, gameIndex);
+
+            const nameSpan = document.createElement("span");
+            nameSpan.textContent = game.name;
+            gameElement.appendChild(nameSpan);
+
+            gameList.appendChild(gameElement);
+        });
+
+        games[currentGameIndex].nights.forEach((completed, nightIndex) => {
+            const nightElement = document.createElement("div");
+            nightElement.className = "night" + (completed ? " completed" : "");
+            nightElement.onclick = () => toggleNightCompletion(nightIndex);
+
+            const nightName = document.createElement("span");
+            nightName.textContent = `Night ${nightIndex + 1}`;
+            nightElement.appendChild(nightName);
+
+            if (completed) {
+                const tickIcon = document.createElement("span");
+                tickIcon.textContent = " ✔";
+                tickIcon.style.color = "#00ff00";  // Green color for the tick
+                nightElement.appendChild(tickIcon);
+            }
+
+            const line = document.createElement("div");
+            line.className = "night-line";
+
+            nightContainer.appendChild(nightElement);
+            nightContainer.appendChild(line);
+        });
+    }
+
+    function drag(event, index) {
+        draggedGameIndex = index;
+        event.dataTransfer.setData("text", event.target.id);
+    }
+
+    function dragOver(event) {
+        event.preventDefault();
+        const hoveredElement = event.target;
+
+        if (hoveredElement && hoveredElement.classList.contains("game-item") && draggedGameIndex !== parseInt(hoveredElement.id.split('-')[1])) {
+            hoveredElement.classList.add("drag-hover");
+        }
+    }
+
+    function drop(event, targetIndex) {
+        event.preventDefault();
+        const draggedElement = document.getElementById(`game-${draggedGameIndex}`);
+
+        if (draggedGameIndex !== targetIndex) {
+            const temp = games[draggedGameIndex];
+            games[draggedGameIndex] = games[targetIndex];
+            games[targetIndex] = temp;
+        }
+        renderGames();
+    }
+
+    // Event listener for the spacebar
+    document.addEventListener("keydown", function(event) {
+        if (event.code === "Space") {
+            document.getElementById("prompt").classList.add("hidden");
+            highlightNextUncompletedNight(); // Automatically highlight next uncompleted night
+        }
+    });
+
+    renderGames(); // Initial rendering of games and nights
+</script>
+
+</body>
+</html>
