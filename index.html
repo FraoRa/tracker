@@ -143,13 +143,6 @@
             right: 20px;
         }
 
-        /* Responsive behavior */
-        @media (max-width: 768px) {
-            .gif-corner {
-                width: 120px; /* Smaller size for small screens */
-            }
-        }
-
         /* New CSS for the prompt */
         .prompt {
             font-size: 20px;
@@ -160,7 +153,6 @@
             animation: pulse 2s infinite;  /* Add pulsing animation */
         }
 
-        /* Pulse animation */
         @keyframes pulse {
             0% {
                 opacity: 1;
@@ -175,7 +167,14 @@
 
         .prompt.hidden {
             opacity: 0;
-            pointer-events: none;
+            pointer-events: none;  /* Prevent interaction when hidden */
+        }
+
+        /* Responsive behavior */
+        @media (max-width: 768px) {
+            .gif-corner {
+                width: 120px; /* Smaller size for small screens */
+            }
         }
     </style>
 </head>
@@ -198,8 +197,8 @@
 <img src="gifs/3.gif" alt="FNAF GIF 3" class="gif-corner bottom-left">
 <img src="gifs/4.gif" alt="FNAF GIF 4" class="gif-corner bottom-right">
 
-<!-- New prompt -->
-<div id="prompt" class="prompt">SPACE to highlight a night as complete(xd mobile users)</div>
+<!-- Prompt that will pulse -->
+<div id="prompt" class="prompt">Click SPACE to set a night as completed(xd mobile users)</div>
 
 <script>
     const games = [
@@ -319,8 +318,13 @@
     // Event listener for the spacebar
     document.addEventListener("keydown", function(event) {
         if (event.code === "Space") {
-            document.getElementById("prompt").classList.add("hidden");
-            highlightNextUncompletedNight(); // Automatically highlight next uncompleted night
+            const prompt = document.getElementById("prompt");
+            
+            // Hide the prompt with the 'hidden' class
+            prompt.classList.add("hidden");
+            
+            // Automatically highlight the next uncompleted night
+            highlightNextUncompletedNight(); 
         }
     });
 
