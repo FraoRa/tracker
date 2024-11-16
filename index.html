@@ -56,7 +56,7 @@
             background-color: transparent;
             transition: all 0.3s ease;
             border-radius: 5px;
-            white-: nowrap;
+            white-space: nowrap;
         }
 
         .game-item.active {
@@ -143,6 +143,13 @@
             right: 20px;
         }
 
+        /* Responsive behavior */
+        @media (max-width: 768px) {
+            .gif-corner {
+                width: 120px; /* Smaller size for small screens */
+            }
+        }
+
         /* New CSS for the prompt */
         .prompt {
             font-size: 20px;
@@ -150,31 +157,25 @@
             text-align: center;
             margin-top: 30px;
             opacity: 1;
-            animation: pulse 2s infinite;  /* Add pulsing animation */
+            transition: opacity 0.3s ease-in-out;
+            animation: pulse 1.5s infinite alternate; /* Pulse effect */
         }
 
         @keyframes pulse {
             0% {
                 opacity: 1;
-            }
-            50% {
-                opacity: 0.5;
+                transform: scale(1);
             }
             100% {
-                opacity: 1;
+                opacity: 0.8;
+                transform: scale(1.1); /* Slightly bigger to create a pulsing effect */
             }
         }
 
         .prompt.hidden {
             opacity: 0;
-            pointer-events: none;  /* Prevent interaction when hidden */
-        }
-
-        /* Responsive behavior */
-        @media (max-width: 768px) {
-            .gif-corner {
-                width: 120px; /* Smaller size for small screens */
-            }
+            pointer-events: none; /* Prevent clicking while hidden */
+            animation: none; /* Stop the pulse when hidden */
         }
     </style>
 </head>
@@ -197,8 +198,8 @@
 <img src="gifs/3.gif" alt="FNAF GIF 3" class="gif-corner bottom-left">
 <img src="gifs/4.gif" alt="FNAF GIF 4" class="gif-corner bottom-right">
 
-<!-- Prompt that will pulse -->
-<div id="prompt" class="prompt">Click SPACE to set a night as completed(xd mobile users)</div>
+<!-- New prompt -->
+<div id="prompt" class="prompt">Click SPACE to highlight a night as complete</div>
 
 <script>
     const games = [
@@ -318,13 +319,8 @@
     // Event listener for the spacebar
     document.addEventListener("keydown", function(event) {
         if (event.code === "Space") {
-            const prompt = document.getElementById("prompt");
-            
-            // Hide the prompt with the 'hidden' class
-            prompt.classList.add("hidden");
-            
-            // Automatically highlight the next uncompleted night
-            highlightNextUncompletedNight(); 
+            document.getElementById("prompt").classList.add("hidden");
+            highlightNextUncompletedNight(); // Automatically highlight next uncompleted night
         }
     });
 
